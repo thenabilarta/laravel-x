@@ -8,7 +8,7 @@ use GuzzleHttp\Client;
 
 class XiboController extends Controller
 {
-    public $access_token = '6xvvHXOENIxFgWPjFID3a6GHD0ttEy4IKPWG4ypG';
+    public $access_token = 'NE3OH3Nrt9oDImhTMcDKvhQSgnVM9X0gs8ihjGQ7';
 
     public function index()
     {
@@ -78,10 +78,6 @@ class XiboController extends Controller
                     'media_id' => ''
                 );
 
-                $xibo = Xibo::create($form_data);
-
-                $xibos = $xibo->getAttributes();
-
                 $client = new Client(['base_uri' => 'http://192.168.44.127']);
 
                 $headers = [
@@ -107,12 +103,18 @@ class XiboController extends Controller
 
                 $contents = $response->getBody();
                 $content = json_decode($contents, true);
+                
+                if ( !isset($content["files"][0]["error"])) {
+                    $xibo = Xibo::create($form_data);
 
-                $xibomediaid = Xibo::find($xibos["id"]);
+                    $xibos = $xibo->getAttributes();
 
-                if($xibomediaid) {
-                    $xibomediaid->media_id = $content["files"][0]["mediaId"];
-                    $xibomediaid->save();
+                    $xibomediaid = Xibo::find($xibos["id"]);
+
+                    if($xibomediaid) {
+                        $xibomediaid->media_id = $content["files"][0]["mediaId"];
+                        $xibomediaid->save();
+                    }
                 }
             }
         }
