@@ -198,13 +198,11 @@ class XiboController extends Controller
 
     public function editstore(Request $request)
     {
-        $xiboimagename = Xibo::find($request->id);
-
         // Make sure you've got the model
-        if($xiboimagename) {
-            $xiboimagename->image_name = $request->image_name . '.' . $request->image_type;
-            $xiboimagename->save();
-        }
+        // if($xiboimagename) {
+        //     $xiboimagename->image_name = $request->image_name . '.' . $request->image_type;
+        //     $xiboimagename->save();
+        // }
 
         $client = new Client(['base_uri' => 'http://192.168.44.127']);
 
@@ -226,6 +224,17 @@ class XiboController extends Controller
             'form_params' => $formparams
         ]);
 
+        $status = $response->getStatusCode();
+
+        if ($status === 200) {
+            $xiboimagename = Xibo::find($request->id);
+
+            if($xiboimagename) {    
+                $xiboimagename->image_name = $request->image_name . '.' . $request->image_type;
+                $xiboimagename->save();
+            }
+        }
+
         return redirect('/');
     }
 
@@ -233,7 +242,7 @@ class XiboController extends Controller
     {
         $xibo = Xibo::findOrFail($id);
 
-        $xibo->delete();
+        // $xibo->delete();
 
         $client = new Client();
 
@@ -245,6 +254,10 @@ class XiboController extends Controller
                 'Accept' => 'application/json'
             ]
         ]);
+
+        if ($response->getStatusCode() === 204) {
+            $xibo->delete();
+        }
 
         return redirect('/');
     }
