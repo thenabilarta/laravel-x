@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\ImageUpload;
 use Illuminate\Http\Request;
+use GuzzleHttp\Client;
 
 class ImageUploadController extends Controller
 {

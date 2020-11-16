@@ -22,6 +22,7 @@
               <h5 class="card-title">{{ ucwords($imagename) }}</h5>
               <p class="card-text">{{ $x["image_name"] }}</p>
               <a href="/edit/{{ $x["id"] }}" class="btn btn-primary">Edit</a>
+              <a href="/delete/{{ $x["id"] }}" class="btn btn-danger">Delete</a>
             </div>
           </div>
         @endforeach
@@ -31,7 +32,7 @@
           @csrf
           <div class="form-group pt-4">
             <label for="file">Example file input</label>
-            <input type="file" class="form-control-file" type="file" name="file" id="file">
+            <input type="file" class="form-control-file" type="file" name="file[]" multiple id="file">
             <button type="submit" class="btn btn-primary my-3">Upload</button>
           </div>
         </form>

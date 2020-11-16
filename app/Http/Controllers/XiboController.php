@@ -8,7 +8,7 @@ use GuzzleHttp\Client;
 
 class XiboController extends Controller
 {
-    public $access_token = '6EY5cyimqnMp4iclRj7tKj1gNXjkWTSXPdKCFxZR';
+    public $access_token = '6xvvHXOENIxFgWPjFID3a6GHD0ttEy4IKPWG4ypG';
 
     public function index()
     {
@@ -60,24 +60,81 @@ class XiboController extends Controller
 
     public function store(Request $request)
     {
-        $file = $request->files->get('file');
+        $files = $request->file('file');
 
-        $fileName = $file->getClientOriginalName();
+        if($request->hasFile('file'))
+        {
+            foreach ($files as $file) {
+                // $imagePath = $file->store('users/' . $this->user->id . '/messages');
+                $fileName = $file->getClientOriginalName();
+                $imagePath = $file->store('uploads', 'public');
+                // dd($imagePath);
+                $imageName = explode("/", $imagePath);
 
-        $imagePath = request('file')->store('uploads', 'public');
+                $form_data = array(
+                    'image_database_name' => $imageName[1],
+                    'image_name' => $fileName,
+                    'image' => $imagePath,
+                    'media_id' => ''
+                );
 
-        $imageName = explode("/", $imagePath);
+                $xibo = Xibo::create($form_data);
 
-        $form_data = array(
-            'image_database_name' => $imageName[1],
-            'image_name' => $fileName,
-            'image' => $imagePath,
-            'media_id' => ''
-        );
+                $xibos = $xibo->getAttributes();
 
-        $xibo = Xibo::create($form_data);
+                $client = new Client(['base_uri' => 'http://192.168.44.127']);
 
-        $xibos = $xibo->getAttributes();
+                $headers = [
+                    'Authorization' => 'Bearer ' . $this->access_token,
+                    'Accept' => 'application/json'
+                ];
+
+                $multipart = [
+                    [
+                        'name' => 'name',
+                        'contents' => $fileName
+                    ],
+                    [
+                        'name' => 'files',
+                        'contents' => fopen('C:/Users/thena/Desktop/laravel-blob/storage/app/public/' . $imagePath, 'r')
+                    ]
+                ];
+
+                $response = $client->request('POST', '/xibo-cms/web/api/library', [
+                    'headers' => $headers,
+                    'multipart' => $multipart
+                ]);
+
+                $contents = $response->getBody();
+                $content = json_decode($contents, true);
+
+                $xibomediaid = Xibo::find($xibos["id"]);
+
+                if($xibomediaid) {
+                    $xibomediaid->media_id = $content["files"][0]["mediaId"];
+                    $xibomediaid->save();
+                }
+            }
+        }
+
+        // $file = $request->files->get('file');
+
+        // $fileName = $file->getClientOriginalName();
+
+        // $imagePath = request('file')->store('uploads', 'public');
+
+        // $imageName = explode("/", $imagePath);
+
+        // $form_data = array(
+        //     'image_database_name' => $imageName[1],
+        //     'image_name' => $fileName,
+        //     'image' => $imagePath,
+        //     'media_id' => ''
+        // );
+
+        // $xibo = Xibo::create($form_data);
+
+        // $xibos = $xibo->getAttributes();
 
         // dd($xibos["id"]);
 
@@ -91,41 +148,41 @@ class XiboController extends Controller
 
         // dd($image);
 
-        $client = new Client(['base_uri' => 'http://192.168.44.127']);
+        // $client = new Client(['base_uri' => 'http://192.168.44.127']);
 
-        $headers = [
-            'Authorization' => 'Bearer ' . $this->access_token,
-            'Accept' => 'application/json'
-        ];
+        // $headers = [
+        //     'Authorization' => 'Bearer ' . $this->access_token,
+        //     'Accept' => 'application/json'
+        // ];
 
-        $multipart = [
-            [
-                'name' => 'name',
-                'contents' => $fileName
-            ],
-            [
-                'name' => 'files',
-                'contents' => fopen('C:/Users/thena/Desktop/laravel-blob/storage/app/public/' . $imagePath, 'r')
-            ]
-        ];
+        // $multipart = [
+        //     [
+        //         'name' => 'name',
+        //         'contents' => $fileName
+        //     ],
+        //     [
+        //         'name' => 'files',
+        //         'contents' => fopen('C:/Users/thena/Desktop/laravel-blob/storage/app/public/' . $imagePath, 'r')
+        //     ]
+        // ];
 
-        $response = $client->request('POST', '/xibo-cms/web/api/library', [
-            'headers' => $headers,
-            'multipart' => $multipart
-        ]);
+        // $response = $client->request('POST', '/xibo-cms/web/api/library', [
+        //     'headers' => $headers,
+        //     'multipart' => $multipart
+        // ]);
 
-        $contents = $response->getBody();
-        $content = json_decode($contents, true);
+        // $contents = $response->getBody();
+        // $content = json_decode($contents, true);
 
         // dd($content["files"][0]["mediaId"]);
 
-        $xibomediaid = Xibo::find($xibos["id"]);
+        // $xibomediaid = Xibo::find($xibos["id"]);
 
         // Make sure you've got the Page model
-        if($xibomediaid) {
-            $xibomediaid->media_id = $content["files"][0]["mediaId"];
-            $xibomediaid->save();
-        }
+        // if($xibomediaid) {
+        //     $xibomediaid->media_id = $content["files"][0]["mediaId"];
+        //     $xibomediaid->save();
+        // }
 
         return redirect('/');
     }
@@ -141,7 +198,7 @@ class XiboController extends Controller
     {
         $xiboimagename = Xibo::find($request->id);
 
-        // Make sure you've got the Page model
+        // Make sure you've got the model
         if($xiboimagename) {
             $xiboimagename->image_name = $request->image_name . '.' . $request->image_type;
             $xiboimagename->save();
@@ -165,6 +222,26 @@ class XiboController extends Controller
         $response = $client->request('PUT', '/xibo-cms/web/api/library/' . $request->media_id , [
             'headers' => $headers,
             'form_params' => $formparams
+        ]);
+
+        return redirect('/');
+    }
+
+    public function delete($id)
+    {
+        $xibo = Xibo::findOrFail($id);
+
+        $xibo->delete();
+
+        $client = new Client();
+
+        $url = 'http://192.168.44.127/xibo-cms/web/api/library/' . $xibo->media_id;
+
+        $response = $client->delete($url, [
+            'headers'  => [
+                'Authorization' => 'Bearer ' . $this->access_token,
+                'Accept' => 'application/json'
+            ]
         ]);
 
         return redirect('/');
